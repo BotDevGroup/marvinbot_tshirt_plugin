@@ -44,20 +44,20 @@ class MarvinBotTShirtPlugin(Plugin):
         self.add_handler(CommandHandler('tshirt', self.on_tshirt_command, command_description='T-Shirt Generator')
             .add_argument('--g', help='Girl T-Shirt', action='store_true')
             .add_argument('--b', help='Boy T-shirt', action='store_true')
+            .add_argument('--size', help='Font Size, default 40')
         )
  
     def setup_schedules(self, adapter):
         pass
 
-    def make_tshirt(self, text, gender="boy"):
+    def make_tshirt(self, text, gender="boy", size=40):
         text = text.upper()
 
-        lenght = 37
-        size = 40
+        if size is None:
+            size = 40
+
         fillcolor = "white"
         width = 160 if "boy" == gender else 50
-
-        text = text[:lenght]
         
         font = ImageFont.truetype("{}/OpenSansEmoji.ttf".format(self.path), int(size))
         original = Image.open("{}/{}.jpg".format(self.path, gender))
@@ -86,14 +86,17 @@ class MarvinBotTShirtPlugin(Plugin):
 
         gender = "girl" if kwargs.get('g') else "boy"
 
+        size = kwargs.get('size')
+
         text = " ".join(message.text.split(" ")[1:])
         text = text.replace("--","—").replace("—g","").replace("—b","")
+        if size is not None: text = re.sub('—\w*\s+\d+\s', '', text)
 
         if text:
             try:
                 img = BytesIO()
                 img.seek(0)
-                img = self.make_tshirt(text=text, gender=gender)
+                img = self.make_tshirt(text=text, gender=gender, size=size)
                 img.seek(0)
                 self.adapter.bot.sendPhoto(chat_id=message.chat_id, photo=img) 
             except Exception as err:
